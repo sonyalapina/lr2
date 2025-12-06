@@ -1,11 +1,15 @@
 import os
 import time
-from config import PIPE_PATH, TIMEOUT, BUFFER_SIZE, ENCODING
+from config import PIPE_PATH, PING_MESSAGE
+from ServerErrors import ErrorHandler, with_error_handling, ProtocolError
 
 class Server:
     def __init__(self):
         self.pipe_path = PIPE_PATH
+        self.error_handler = ErrorHandler()
         self.setup_pipe()
+
+    @with_error_handling(context="setup_pipe")
     
     def setup_pipe(self):
         if not os.path.exists(self.pipe_path):
@@ -13,7 +17,9 @@ class Server:
             print(f"создан pipe: {self.pipe_path}")
         else:
             print(f"pipe уже существует: {self.pipe_path}")
-    
+
+    @with_error_handling(context="wait_for_request") 
+
     def wait_for_request(self):
         print(f"сервер: ожидание запроса...")
         
@@ -22,7 +28,11 @@ class Server:
             with open(self.pipe_path, 'r') as pipe:
                 message = pipe.read().strip()
                 print(f"сервер: получено сообщение: '{message}'")
-                
+
+                if message in ['pong', 'error']:
+                    print(f"сервер: проигнорирован собственный ответ '{message}'")
+                    return False, None
+
                 if message.lower() == "ping":
                     return True, message
                 else:
@@ -36,13 +46,20 @@ class Server:
     def process_request(self, request):
         if request.lower() == "ping":  
             print("сервер: обрабатываю запрос ping...")
-            #имитация обработки
+            try:
+                self.error_handler.validate_ping_message(request, PING_MESSAGE)
+            except ProtocolError:
+                print(f"сервер: ошибка протокола")
+                return "error"
+            
             time.sleep(0.5)
             return "pong"
         else:
             print(f"сервер: не могу обработать запрос")
             return "error"
-    
+        
+    @with_error_handling(context="send_response")
+
     def send_response(self, response):
         if response is None:
             print("сервер: нечего отправлять")
@@ -51,6 +68,7 @@ class Server:
         print(f"сервер: отправляю ответ '{response}'...")
         
         try:
+            time.sleep(0.1) #для синхронизации с клиентом
             #открываем pipe на запись
             with open(self.pipe_path, 'w') as pipe:
                 pipe.write(response)
@@ -96,7 +114,9 @@ class Server:
                 break
         
         self.cleanup()
-    
+        
+    @with_error_handling(context="cleanup")
+
     def cleanup(self):
         #очистка ресурсов
         try:

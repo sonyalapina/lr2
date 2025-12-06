@@ -77,15 +77,24 @@ class ErrorHandler:
             raise ProtocolError(f"Ожидалось '{expected_ping}', получено '{received_message}'")
         return True
 
-def with_error_handling(error_handler: ErrorHandler,context:str=""):
+def with_error_handling(context:str=""):
     def decorator(func):
-        def wrapper(*args,**kwargs):
+        def wrapper(self, *args, **kwargs):
+            # Проверяем, есть ли error_handler у объекта
+            if not hasattr(self, 'error_handler') or self.error_handler is None:
+                # Если нет обработчика, просто выполняем функцию
+                try:
+                    return func(self, *args, **kwargs)
+                except Exception as e:
+                    print(f"Ошибка в {context or func.__name__}: {e}")
+                    return None
+            
             try:
-                result=func(*args, **kwargs)
-                error_handler.reset_consecutive_errors()
+                result = func(self, *args, **kwargs)
+                self.error_handler.reset_consecutive_errors()
                 return result
             except Exception as e:
-                can_continue, message= error_handler.handle_error(e,context or func.__name__)
+                can_continue, message = self.error_handler.handle_error(e, context or func.__name__)
                 if not can_continue:
                     raise ServerErrors(message) from e
                 return None
