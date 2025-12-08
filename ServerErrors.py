@@ -1,102 +1,83 @@
-import errno
+#!/usr/bin/env python3
 import os
+import sys
+import errno
 import time
-from typing import Tuple
-import logging
 
-class ServerErrors(Exception):
-    pass
-
-class PipeError(ServerErrors):
-    pass
-
-class ProtocolError(ServerErrors):
-    pass
-
-class ErrorHandler:
-    def __init__(self):
-        self.consecutive_errors=0
-        self.max_consecutive_errors=5
-
-        logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s",)
-        self.logger=logging.getLogger("ServerErrorHandler")
-
-    def handle_error(self,error: Exception, context:str="")->Tuple[bool,str]:
-        error_code=getattr(error,"errno", None)
-        self.logger.error(f"[{context}] {type(error).__name__}: {str(error)}")
-        self.consecutive_errors+=1
-
-        if self.consecutive_errors>=self.max_consecutive_errors:
-            return False, "Слишком много ошибок подряд, требуется перезапуск"
-        if isinstance(error,BrokenPipeError):
-            self.consecutive_errors=0
-            return True, "BrokenPipeError: восстановление соединения"
-        if isinstance(error, FileNotFoundError):
-            self.consecutive_errors=0
-            return True, "FileNotFoundError: файл будет создан"
-
-        recoverable_errors=[
-            errno.EEXIST,
-            errno.EPIPE,
-            errno.ENXIO,
-            errno.EAGAIN,
-            errno.EINTR,
-        ]
-
-        if error_code in recoverable_errors:
-            self.consecutive_errors=0
-            return True, f"Восстанавливаемая ошибка: {error_code}"
-
-        fatal_errors=[
-            errno.EACCES,
-            errno.ENOSPC,
-            errno.EROFS,
-            errno.ENOMEM,
-        ]
-        if error_code in fatal_errors:
-            return False, self._get_fatal_message(error_code,context)
-        if isinstance(error,ProtocolError):
-            self.consecutive_errors=0
-            return True, "Некорректное сообщение, отправленное клиентом, ждем дальше"
-        return True, f"Ошибка {type(error).__name__}, работа продолжается :) "
-
-    def _get_fatal_message(self,error_code:int, context:str)->str:
-        message={
-            errno.EACCES: "Критическая ошибка: нет прав доступа",
-            errno.ENOSPC: "Критическая ошибка: нет места на диске",
-            errno.EROFS: "Критическая ошибка: файловая система только для чтения",
-            errno.ENOMEM: "Критическая ошибка: недостаточно памяти",
-        }
-        return message.get(error_code,"Ошибка критическая, нужна перезагрузка")
-
-    def reset_consecutive_errors(self):
-        self.consecutive_errors=0
-
-    def validate_ping_message(self,received_message:str, expected_ping: str)->bool:
-        if received_message!=expected_ping:
-            raise ProtocolError(f"Ожидалось '{expected_ping}', получено '{received_message}'")
-        return True
-
-def with_error_handling(context:str=""):
-    def decorator(func):
-        def wrapper(self, *args, **kwargs):
-            # Проверяем, есть ли error_handler у объекта
-            if not hasattr(self, 'error_handler') or self.error_handler is None:
-                # Если нет обработчика, просто выполняем функцию
-                try:
-                    return func(self, *args, **kwargs)
-                except Exception as e:
-                    print(f"Ошибка в {context or func.__name__}: {e}")
-                    return None
-            
+def handle_errors():
+    shared_file = "/tmp/shared_communication.txt"
+    
+    print("\nСервер запущен и ожидает сообщения...")
+    print("Для завершения нажмите Ctrl+C\n")
+    
+    try:
+        if not os.path.exists(shared_file):
+            with open(shared_file, 'w') as f:
+                pass
+            print(f"Создан общий файл: {shared_file}")
+        
+        print("Ожидание запроса от клиента...")
+        
+        while True:
             try:
-                result = func(self, *args, **kwargs)
-                self.error_handler.reset_consecutive_errors()
-                return result
+                fd = os.open(shared_file, os.O_RDWR)
+                
+                try:
+                    os.lockf(fd, os.F_LOCK, 0)
+                    
+                    os.lseek(fd, 0, os.SEEK_SET)
+                    
+                    data = os.read(fd, 1024)
+                    
+                    if data:
+                        message = data.decode('utf-8').strip()
+                        print(f"Получено сообщение: '{message}'")
+                        
+                        # Очищаем файл
+                        os.ftruncate(fd, 0)
+                        
+                        if message.lower() == "ping":
+                            response = "pong"
+                        else:
+                            response = f"error: expected 'ping', got '{message}'"
+                        
+                        os.lseek(fd, 0, os.SEEK_SET)
+                        os.write(fd, response.encode('utf-8'))
+                        print(f"Отправлен ответ: '{response}'")
+                        
+                        os.fsync(fd)
+                        
+                        print("=" * 40 + "\n")
+                    
+                    os.lockf(fd, os.F_ULOCK, 0)
+                    
+                except Exception as e:
+                    try:
+                        os.lockf(fd, os.F_ULOCK, 0)
+                    except:
+                        pass
+                    raise
+                
+                os.close(fd)
+                
+                time.sleep(0.1)
+                    
+            except KeyboardInterrupt:
+                print("\nСервер завершает работу...")
+                break
             except Exception as e:
-                can_continue, message = self.error_handler.handle_error(e, context or func.__name__)
-                if not can_continue:
-                    raise ServerErrors(message) from e
-                return None
-        return wrapper
-    return decorator
+                print(f"Ошибка: {e}")
+                time.sleep(1)
+                continue
+                
+    except Exception as e:
+        print(f"Неожиданная ошибка: {e}")
+        return 1
+    finally:
+        try:
+            os.unlink(shared_file)
+            print(f"Файл {shared_file} удален")
+        except:
+            pass
+    
+    return 0
