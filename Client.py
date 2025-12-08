@@ -56,16 +56,19 @@ def client():
                         data = os.read(fd, 1024)
                         
                         if data:
-                            response = data.decode('utf-8').strip()
-
+                            response = data.decode('utf-8')
+                            
                             if response == " ":
                                 print("Ошибка: неверный запрос")
-
-                            if (response != user_input) && (response != " "):
-                                print(f"Получен ответ от сервера: {response}")
                                 response_received = True
-                                
-                                #очищаем для следующего запроса
+                            else:
+                                response_stripped = response.strip()
+                                if response_stripped != user_input:
+                                    print(f"Получен ответ от сервера: {response_stripped}")
+                                    response_received = True
+                            
+                            #очищаем файл
+                            if response_received:
                                 os.ftruncate(fd, 0)
 
                         os.lockf(fd, os.F_ULOCK, 0)
