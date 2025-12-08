@@ -22,20 +22,20 @@ def client():
                 break
             
             try:            
-                # открываем файл для записи с блокировкой
+                #открываем файл для записи с блокировкой
                 fd = os.open(shared_file, os.O_RDWR)
                 
-                # блокируем файл
+                #блокируем файл
                 os.lockf(fd, os.F_LOCK, 0)
                 
-                # записываем запрос в файл
+                #записываем запрос в файл
                 os.lseek(fd, 0, os.SEEK_SET)
                 os.write(fd, user_input.encode('utf-8'))
                 
-                # сбрасываем буферы на диск
+                #сбрасываем буферы на диск
                 os.fsync(fd)
                 
-                # снимаем блокировку
+                #снимаем блокировку
                 os.lockf(fd, os.F_ULOCK, 0)
                 os.close(fd)
                 
@@ -45,13 +45,13 @@ def client():
                 
                 while not response_received and (time.time() - start_time) < timeout:
                     try:
-                        # открываем для чтения
+                        #открываем для чтения
                         fd = os.open(shared_file, os.O_RDWR)
                         
-                        # блокируем для чтения
+                        #блокируем для чтения
                         os.lockf(fd, os.F_LOCK, 0)
                         
-                        # читаем ответ
+                        #читаем ответ
                         os.lseek(fd, 0, os.SEEK_SET)
                         data = os.read(fd, 1024)
                         
@@ -59,17 +59,16 @@ def client():
                             response = data.decode('utf-8').strip()
 
                             if response != user_input:
-                                print(f"Получен ответ от сервера: '{response}'")
+                                print(f"Получен ответ от сервера: {response}")
                                 response_received = True
                                 
-                                # очищаем для следующего запроса
+                                #очищаем для следующего запроса
                                 os.ftruncate(fd, 0)
 
                         os.lockf(fd, os.F_ULOCK, 0)
                         os.close(fd)
                         
                     except KeyboardInterrupt:
-                        # Обработка Ctrl+C внутри цикла ожидания
                         raise
                     except Exception as e:
                         try:
@@ -77,10 +76,8 @@ def client():
                             os.close(fd)
                         except:
                             pass
-                        # Продолжаем ожидание при других ошибках
                         continue
                     
-                    # Короткая пауза между проверками
                     if not response_received:
                         time.sleep(0.1)
                 
@@ -89,7 +86,6 @@ def client():
                 
                 print("\n")
             except KeyboardInterrupt:
-                # Ctrl+C во время операции с файлом
                 print("\nЗавершение работы...")
                 break            
             except OSError as e:
@@ -103,7 +99,6 @@ def client():
                 break
     
     except KeyboardInterrupt:
-        # Основной обработчик KeyboardInterrupt для ввода
         print("\nЗавершение работы клиента...")
     
     return 0
