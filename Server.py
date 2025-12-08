@@ -5,55 +5,53 @@ import errno
 import time
 
 def server():
-    # имя общего файла для общения
+    #имя общего файла для общения
     shared_file = "/tmp/shared_communication.txt"
     
     try:
-        # создаем файл если его еще нет
+        #создаем файл если его еще нет
         if not os.path.exists(shared_file):
             with open(shared_file, 'w') as f:
                 pass
             print(f"Создан общий файл: {shared_file}")
 
-        print("Ожидание запроса от клиента...")
+        print("Ожидание запроса от клиента...\n")
         
         while True:
             try:
-                # открываем для чтения
+                #открываем для чтения
                 fd = os.open(shared_file, os.O_RDWR)
                 
                 try:
-                    # блокируем файл
+                    #блокируем файл
                     os.lockf(fd, os.F_LOCK, 0)
                     
-                    # перемещаем указатель в начало
+                    #перемещаем указатель в начало
                     os.lseek(fd, 0, os.SEEK_SET)
                     
-                    # читаем данные
+                    #читаем данные
                     data = os.read(fd, 1024)
                     
                     if data:
                         message = data.decode('utf-8').strip()
-                        print(f"Получено сообщение: '{message}'")
+                        print(f"Получено сообщение: {message}")
                         
                         # очищаем файл
                         os.ftruncate(fd, 0)
 
                         if message.lower() == "ping":
                             response = "pong"
-                            # записываем ответ в файл только для корректного запроса
+                            #записываем ответ в файл
                             os.lseek(fd, 0, os.SEEK_SET)
                             os.write(fd, response.encode('utf-8'))
-                            print(f"Отправлен ответ: '{response}'")
+                            print(f"Отправлен ответ: {response}")
                             
-                            # сбрасываем буферы на диск
+                            #сбрасываем буферы на диск
                             os.fsync(fd)
                         else:
-                            # Только выводим ошибку в терминал, НЕ записываем в файл
-                            error_msg = f"Ошибка: неверный запрос (получено '{message}', ожидается 'ping')"
+                            #выводим ошибку в терминал
+                            error_msg = "Ошибка: неверный запрос"
                             print(error_msg)
-                            # Для некорректного запроса оставляем файл пустым
-                            # или можно записать пустую строку
                             os.ftruncate(fd, 0)
                         
                         print("\n")
@@ -61,14 +59,14 @@ def server():
                     os.lockf(fd, os.F_ULOCK, 0)
                     
                 except Exception as e:
-                    # при ошибке снимаем блокировку
+                    #при ошибке снимаем блокировку
                     try:
                         os.lockf(fd, os.F_ULOCK, 0)
                     except:
                         pass
                     raise
                 
-                # закрываем файл
+                #закрываем файл
                 os.close(fd)
                 time.sleep(0.1)
                     
@@ -84,7 +82,7 @@ def server():
         print(f"Неожиданная ошибка: {e}")
         return 1
     finally:
-        # удаляем файл при завершении
+        #удаляем файл при завершении
         try:
             os.unlink(shared_file)
             print(f"Файл {shared_file} удален")
