@@ -33,9 +33,8 @@ def client():
             
             #сбрасываем буферы на диск
             os.fsync(fd)
-            print(f"Запрос записан в файл")
             
-            # 5. Снимаем блокировку
+            #cнимаем блокировку
             os.lockf(fd, os.F_ULOCK, 0)
             os.close(fd)
             
