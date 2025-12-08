@@ -14,6 +14,7 @@ def handle_errors():
         if not os.path.exists(shared_file):
             with open(shared_file, 'w') as f:
                 pass
+            print(f"Создан общий файл: {shared_file}")
         
         print("Ожидание запроса от клиента...")
         
@@ -30,6 +31,7 @@ def handle_errors():
                     
                     if data:
                         message = data.decode('utf-8').strip()
+                        print(f"Получено сообщение: '{message}'")
                         
                         # Очищаем файл
                         os.ftruncate(fd, 0)
@@ -41,8 +43,11 @@ def handle_errors():
                         
                         os.lseek(fd, 0, os.SEEK_SET)
                         os.write(fd, response.encode('utf-8'))
+                        print(f"Отправлен ответ: '{response}'")
                         
                         os.fsync(fd)
+                        
+                        print("=" * 40 + "\n")
                     
                     os.lockf(fd, os.F_ULOCK, 0)
                     
@@ -71,6 +76,7 @@ def handle_errors():
     finally:
         try:
             os.unlink(shared_file)
+            print(f"Файл {shared_file} удален")
         except:
             pass
     
