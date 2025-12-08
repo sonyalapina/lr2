@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 import os
 import sys
 import errno
@@ -9,11 +10,10 @@ def server():
     shared_file = "/tmp/shared_communication.txt"
     
     try:
-        #создаем файл если его еще нет
-        if not os.path.exists(shared_file):
-            with open(shared_file, 'w') as f:
-                pass
-            print(f"Создан общий файл: {shared_file}")
+        #создаем файл
+        with open(shared_file, 'w') as f:
+            pass
+        print(f"Файл {shared_file} готов")
 
         print("Ожидание запроса от клиента...\n")
         
@@ -67,17 +67,14 @@ def server():
                     except:
                         pass
                     raise
-                
-                #закрываем файл
+            
                 os.close(fd)
-                time.sleep(0.1)
                     
             except KeyboardInterrupt:
                 print("\nСервер завершает работу...")
                 break
             except Exception as e:
                 print(f"Ошибка: {e}")
-                time.sleep(1)
                 continue
                 
     except Exception as e:
@@ -85,11 +82,8 @@ def server():
         return 1
     finally:
         #удаляем файл при завершении
-        try:
-            os.unlink(shared_file)
-            print(f"Файл {shared_file} удален")
-        except:
-            pass
+        os.unlink(shared_file)
+        print(f"Файл {shared_file} удален")
     
     return 0
 
