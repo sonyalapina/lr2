@@ -58,7 +58,10 @@ def client():
                         if data:
                             response = data.decode('utf-8').strip()
 
-                            if response != user_input:
+                            if response == " ":
+                                print("Ошибка: неверный запрос")
+
+                            if (response != user_input) && (response != " "):
                                 print(f"Получен ответ от сервера: {response}")
                                 response_received = True
                                 
