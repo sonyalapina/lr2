@@ -78,15 +78,14 @@ def client():
                 print("Таймаут: сервер не ответил")
             
             print("\n")
-            
+        except KeyboardInterrupt:
+            print("\nЗавершение работы...")
+            break            
         except OSError as e:
             if e.errno == errno.EACCES:
                 print("Ошибка доступа к файлу")
             else:
                 print(f"Ошибка ввода-вывода: {e}")
-            break
-        except KeyboardInterrupt:
-            print("\nЗавершение работы...")
             break
         except Exception as e:
             print(f"Неожиданная ошибка: {e}")
