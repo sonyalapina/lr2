@@ -34,7 +34,7 @@ def server():
                     
                     if data:
                         message = data.decode('utf-8').strip()
-                        print(f"Получено сообщение: '{message}'")
+                        print(f"Получено сообщение: {message}")
                         
                         #очищаем файл
                         os.ftruncate(fd, 0)
@@ -47,7 +47,7 @@ def server():
                         #записываем ответ в файл
                         os.lseek(fd, 0, os.SEEK_SET)
                         os.write(fd, response.encode('utf-8'))
-                        print(f"Отправлен ответ: '{response}'")
+                        print(f"Отправлен ответ: {response}")
                         
                         #сбрасываем буферы на диск
                         os.fsync(fd)                        
