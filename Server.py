@@ -52,7 +52,9 @@ def server():
                             #выводим ошибку в терминал
                             error_msg = "Ошибка: неверный запрос"
                             print(error_msg)
-                            os.ftruncate(fd, 0)
+                            os.lseek(fd, 0, os.SEEK_SET)
+                            os.write(fd, b" ")
+                            os.fsync(fd)
                         
                         print("\n")
                     
