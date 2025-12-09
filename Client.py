@@ -20,6 +20,10 @@ def client():
             if user_input.lower() == "exit":
                 print("Завершение работы клиента...")
                 break
+
+            if not user_input:                
+                print("Ошибка: запрос не может быть пустым\n")
+                continue
             
             try:            
                 #открываем файл для записи с блокировкой
