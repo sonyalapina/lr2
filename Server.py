@@ -19,7 +19,7 @@ def server():
         
         while True:
             try:
-                #открываем для чтения
+                
                 fd = os.open(shared_file, os.O_RDWR)
                 
                 try:
