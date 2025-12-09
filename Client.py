@@ -27,16 +27,14 @@ def client():
             
             try:            
                 #открываем файл для записи с блокировкой
-                fd = os.open(shared_file, os.O_RDWR)
-                
-                #блокируем файл
+                fd = os.open(shared_file, os.O_RDWR)            
                 os.lockf(fd, os.F_LOCK, 0)
                 
                 #записываем запрос в файл
                 os.lseek(fd, 0, os.SEEK_SET)
                 os.write(fd, user_input.encode('utf-8'))
                 
-                #сбрасываем буферы на диск
+                #сбрасываем на диск
                 os.fsync(fd)
                 
                 #снимаем блокировку
