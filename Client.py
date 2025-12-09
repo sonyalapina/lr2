@@ -74,10 +74,8 @@ def client():
                                 os.ftruncate(fd, 0)
 
                         os.lockf(fd, os.F_ULOCK, 0)
-                        os.close(fd)
-                        
-                    except KeyboardInterrupt:
-                        raise
+                        os.close(fd)                        
+                   
                     except Exception as e:
                         try:
                             os.lockf(fd, os.F_ULOCK, 0)
