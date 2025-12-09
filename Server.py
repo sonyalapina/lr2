@@ -37,6 +37,7 @@ def server():
                         print(f"Получено сообщение: {message}")
                         
                         # очищаем файл
+                        time.sleep(3)
                         os.ftruncate(fd, 0)
 
                         if message.lower() == "ping":
