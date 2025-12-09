@@ -47,7 +47,7 @@ def server():
                             print(f"Отправлен ответ: {response}")
                             
                             #сбрасываем буферы на диск
-                            os.fsync(fd)
+                            os.fsync(fd)                            
                         else:
                             #выводим ошибку в терминал
                             error_msg = "Ошибка: неверный запрос"
@@ -69,12 +69,14 @@ def server():
                     raise
             
                 os.close(fd)
+                time.sleep(0.1)
                     
             except KeyboardInterrupt:
                 print("\nСервер завершает работу...")
                 break
             except Exception as e:
                 print(f"Ошибка: {e}")
+                time.sleep(1)
                 continue
                 
     except Exception as e:
