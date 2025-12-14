@@ -10,8 +10,8 @@ def client(server_id):
     shared_file = f"/tmp/shared_communication_{server_id}.txt"
     
     if not os.path.exists(shared_file):
-        print(f"Сервер с ID '{server_id}' не запущен или файл не найден")
-        print("Запустите сервер с командой: python server.py [server_id]")
+        print(f"The server with ID '{server_id}' is not running or the file is not found")
+        print("Start the server with the command: python server.py [server_id]")
         return 1
     
     # Файл для хранения информации о клиентах
@@ -48,12 +48,12 @@ def client(server_id):
         os.lockf(fd, os.F_ULOCK, 0)
         os.close(fd)
         
-        print(f"\nПодключение к серверу {server_id}")
-        print(f"Вы - клиент №{client_number}")
-        print("Введите запрос или 'exit' для выхода\n")
+        print(f"\nConnecting to the server {server_id}")
+        print(f"You are a client №{client_number}")
+        print("Enter a request or 'exit' to exit\n")
         
     except Exception as e:
-        print(f"Ошибка при получении номера клиента: {e}")
+        print(f"Error when receiving the client's number: {e}")
         return 1
     
     # Функция для фонового мониторинга сервера
@@ -69,12 +69,11 @@ def client(server_id):
                 # Проверяем наличие файлов сервера
                 if not os.path.exists(shared_file) or not os.path.exists(clients_file):
                     shutdown_event.set()
-                    print(f"\nСервер отключен")
-                    # Завершаем программу
+                    print(f"\nThe server is disabled")
                     os._exit(0)
                     return
                 
-                # Проверяем, не пришло ли сообщение о завершении сервера
+                # Проверяем на наличие сообщения о завершении сервера
                 try:
                     if os.path.exists(shared_file):
                         fd = os.open(shared_file, os.O_RDWR)
@@ -84,11 +83,10 @@ def client(server_id):
                             data = os.read(fd, 1024)
                             
                             if data:
-                                # НЕ используем strip() здесь!
                                 response = data.decode('utf-8')
                                 if response.strip() == "SERVER_SHUTDOWN":
                                     shutdown_event.set()
-                                    print(f"\nСервер отключен")
+                                    print(f"\nThe server is disabled")
                                     os._exit(0)
                                     return
                             
@@ -112,27 +110,24 @@ def client(server_id):
     try:
         while not shutdown_event.is_set():
             try:
-                # Используем обычный input для нормального ввода
-                user_input = input("Введите запрос: ").strip()
+                user_input = input("Enter a request: ").strip()
                 
             except EOFError:
                 print()
                 break
             except KeyboardInterrupt:
-                print("\nЗавершение работы клиента...")
+                print("\nClient shutdown...")
                 break
             except Exception as e:
-                # Пропускаем ошибки ввода
                 continue
             
             if shutdown_event.is_set():
-                print(f"\nСервер отключен")
-                # Завершаем программу
+                print(f"\nThe server is disabled")
                 os._exit(0)
                 return 0
             
             if user_input.lower() == "exit":
-                print(f"Клиент №{client_number} завершает работу...")
+                print(f"Client №{client_number} is closing...")
                 
                 # Уменьшаем счетчик клиентов при выходе
                 try:
@@ -142,7 +137,6 @@ def client(server_id):
                     data = os.read(fd, 1024)
                     if data:
                         current_clients = int(data.decode('utf-8').strip())
-                        # Не уменьшаем ниже 0
                         if current_clients > 0:
                             new_count = current_clients - 1
                             os.lseek(fd, 0, os.SEEK_SET)
@@ -157,13 +151,12 @@ def client(server_id):
                 break
 
             if not user_input:
-                print(f"Ошибка: запрос не может быть пустым\n")
+                print(f"Error: The request cannot be empty\n")
                 continue
             
             try:
-                # Проверяем, не завершился ли сервер перед отправкой
                 if shutdown_event.is_set():
-                    print(f"\nСервер отключен")
+                    print(f"\nThe server is disabled")
                     os._exit(0)
                     return 0
                 
@@ -176,7 +169,7 @@ def client(server_id):
                 os.lseek(fd, 0, os.SEEK_SET)
                 os.write(fd, request_data.encode('utf-8'))
                 
-                # Сбрасываем на диск
+                # Сбрасываем на диск(синхронизируем)
                 os.fsync(fd)
                 
                 # Снимаем блокировку
@@ -200,23 +193,21 @@ def client(server_id):
                         data = os.read(fd, 1024)
                         
                         if data:
-                            # НЕ используем strip() при проверке ответа " "
                             response = data.decode('utf-8')
                             response_trimmed = response.strip()
                             
                             # Проверяем, не пришло ли сообщение о завершении сервера
                             if response_trimmed == "SERVER_SHUTDOWN":
                                 shutdown_event.set()
-                                print(f"\nСервер отключен")
+                                print(f"\nThe server is disabled")
                                 os._exit(0)
                                 return 0
                             elif response == " ":
                                 # Это специальный ответ от сервера на неверный запрос
-                                print(f"Ошибка: неверный запрос (сервер не распознал команду)")
+                                print(f"Error: Invalid request (the server did not recognize the command)")
                                 response_received = True
                             elif response_trimmed:
-                                # Проверяем, что ответ отличается от нашего запроса
-                                # и содержит ответ от сервера
+                                # Проверяем, что ответ отличается от нашего запроса и содержит ответ от сервера
                                 if "pong" in response_trimmed.lower() or "сервер" in response_trimmed.lower():
                                     print(f"{response_trimmed}")
                                     response_received = True
@@ -225,7 +216,7 @@ def client(server_id):
                                     print(f"{response_trimmed}")
                                     response_received = True
                             
-                            # Очищаем файл только если получили ответ
+                            # Очищаем файл, если получили ответ
                             if response_received:
                                 os.ftruncate(fd, 0)
 
@@ -236,7 +227,7 @@ def client(server_id):
                         # Если файл не найден, значит сервер завершил работу
                         if isinstance(e, FileNotFoundError):
                             shutdown_event.set()
-                            print(f"\nСервер отключен")
+                            print(f"\nThe server is disabled")
                             os._exit(0)
                             return 0
                         
@@ -252,34 +243,34 @@ def client(server_id):
                         time.sleep(0.1)
                 
                 if shutdown_event.is_set():
-                    print(f"\nСервер отключен")
+                    print(f"\nThe server is disabled")
                     os._exit(0)
                     return 0
                 
                 if not response_received:
-                    print(f"Таймаут: сервер не ответил")
+                    print(f"Timeout: the server did not respond")
                 
                 print()
            
             except FileNotFoundError:
                 shutdown_event.set()
-                print(f"\nСервер отключен")
+                print(f"\nThe server is disabled")
                 os._exit(0)
                 return 0
             except OSError as e:
                 if e.errno == errno.EACCES:
-                    print(f"Ошибка доступа к файлу")
+                    print(f"File access error")
                 else:
                     shutdown_event.set()
-                    print(f"\nСервер отключен")
+                    print(f"\nThe server is disabled")
                     os._exit(0)
                 return 0
             except Exception as e:
-                print(f"Неожиданная ошибка: {e}")
+                print(f"Unexpected error: {e}")
                 break
     
     except KeyboardInterrupt:
-        print(f"\nКлиент №{client_number} завершает работу...")
+        print(f"\nClient №{client_number} is closing...")
         shutdown_event.set()
         
         # Уменьшаем счетчик клиентов при прерывании
@@ -311,8 +302,8 @@ def client(server_id):
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Использование: python client.py <server_id>")
-        print("Пример: python client.py server1")
+        print("Using: python client.py <server_id>")
+        print("Example: python client.py server1")
         sys.exit(1)
     
     server_id = sys.argv[1]
