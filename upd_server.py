@@ -8,7 +8,7 @@ import uuid
 import signal
 
 def server(server_id=None):
-    # Генерируем уникальный ID сервера если не указан
+    # Генерируем уникальный ID сервера если его нет
     if server_id is None:
         server_id = str(uuid.uuid4())[:8]
     
@@ -26,7 +26,7 @@ def server(server_id=None):
         nonlocal is_shutting_down
         if not is_shutting_down:
             is_shutting_down = True
-            print(f"\nСервер {server_id} завершает работу...")
+            print(f"\nThe server {server_id} is closing...")
             
             # Оповещаем всех клиентов о завершении работы сервера
             try:
@@ -42,7 +42,7 @@ def server(server_id=None):
                         os.write(fd, shutdown_msg.encode('utf-8'))
                         os.ftruncate(fd, len(shutdown_msg))
                         
-                        # Сбрасываем буферы на диск
+                        # Сбрасываем на диск
                         os.fsync(fd)
                         
                         os.lockf(fd, os.F_ULOCK, 0)
@@ -54,7 +54,7 @@ def server(server_id=None):
                     finally:
                         os.close(fd)
             except Exception as e:
-                print(f"Ошибка при оповещении клиентов: {e}")
+                print(f"Error when notifying clients: {e}")
             
             # Даем время клиентам получить сообщение
             time.sleep(1)
@@ -62,39 +62,39 @@ def server(server_id=None):
             # Удаляем файлы
             if os.path.exists(shared_file):
                 os.unlink(shared_file)
-                print(f"Файл {shared_file} удален")
+                print(f"{shared_file} file deleted")
             
             if os.path.exists(clients_file):
                 os.unlink(clients_file)
-                print(f"Файл {clients_file} удален")
+                print(f"{clients_file} file deleted")
             
             sys.exit(0)
     
-    # Регистрируем обработчики сигналов
+    #обработчики сигналов
     signal.signal(signal.SIGINT, shutdown_handler)
     signal.signal(signal.SIGTERM, shutdown_handler)
     
-    # Инициализируем счетчик клиентов
+    # Создаем счетчик клиентов
     try:
         with open(clients_file, 'w') as f:
             f.write("0")
     except:
         pass
     
-    print(f"Сервер {server_id} запущен")
-    print(f"Файл общения: {shared_file}")
-    print("Для подключения клиента используйте команду:")
+    print(f"The {server_id} server is running")
+    print(f"The communication file: {shared_file}")
+    print("To connect the client, use the command:")
     print(f"python client.py {server_id}")
-    print("Для завершения сервера нажмите Ctrl+C")
+    print("To end the server, click Ctrl+C")
     print()
     
     try:
         # Создаем файл
         with open(shared_file, 'w') as f:
             pass
-        print(f"Файл {shared_file} готов")
+        print(f"The {shared_file} file is ready")
 
-        print("Ожидание запроса от клиента...\n")
+        print("Waiting for a request from the client...\n")
         
         while True:
             try:
@@ -115,7 +115,6 @@ def server(server_id=None):
                         
                         # Если клиент отправил сообщение о завершении
                         if message_data == "SERVER_SHUTDOWN":
-                            # Это должно быть только от сервера при shutdown
                             os.lseek(fd, 0, os.SEEK_SET)
                             os.write(fd, b" ")
                             os.fsync(fd)
@@ -125,31 +124,31 @@ def server(server_id=None):
                             client_num = client_num.strip()
                             message = message.strip()
                             
-                            print(f"Сервер {server_id}: Получено сообщение от клиента №{client_num}: {message}")
+                            print(f"The server {server_id}: A message has been received from the client №{client_num}: {message}")
                             
                             # Очищаем файл
                             time.sleep(1)
                             os.ftruncate(fd, 0)
 
                             if message.lower() == "ping":
-                                response = f"Клиент №{client_num}: pong от сервера {server_id}"
+                                response = f"The client №{client_num}: pong from the server {server_id}"
                                 # Записываем ответ в файл
                                 os.lseek(fd, 0, os.SEEK_SET)
                                 os.write(fd, response.encode('utf-8'))
-                                print(f"Сервер {server_id}: Отправлен ответ клиенту №{client_num}")
+                                print(f"The server {server_id}: A response has been sent to the client №{client_num}")
                                 
                                 # Сбрасываем буферы на диск
                                 os.fsync(fd)                            
                             else:
                                 # Выводим ошибку в терминал
-                                error_msg = f"Сервер {server_id}: Клиент №{client_num}: Ошибка: неверный запрос"
+                                error_msg = f"The server {server_id}: The client №{client_num}: Error: Invalid request"
                                 print(error_msg)
                                 os.lseek(fd, 0, os.SEEK_SET)
                                 os.write(fd, b" ")
                                 os.fsync(fd)
                         else:
                             # Если формат неверный
-                            print(f"Сервер {server_id}: Получено некорректное сообщение: {message_data}")
+                            print(f"The server {server_id}: Incorrect message received: {message_data}")
                             os.lseek(fd, 0, os.SEEK_SET)
                             os.write(fd, b" ")
                             os.fsync(fd)
@@ -170,20 +169,19 @@ def server(server_id=None):
                 time.sleep(0.1)
                     
             except KeyboardInterrupt:
-                # Обработчик сигнала уже обработает это
                 continue
             except Exception as e:
-                print(f"Ошибка: {e}")
+                print(f"Error: {e}")
                 time.sleep(1)
                 continue
                 
     except Exception as e:
-        print(f"Неожиданная ошибка: {e}")
+        print(f"Unexpected error: {e}")
         return 1
     
     return 0
 
 if __name__ == "__main__":
-    # Позволяем указать ID сервера как аргумент командной строки
+    # Указываем ID сервера как аргумент командной строки
     server_id = sys.argv[1] if len(sys.argv) > 1 else None
     sys.exit(server(server_id))
