@@ -208,7 +208,7 @@ def client(server_id):
                                 response_received = True
                             elif response_trimmed:
                                 # Проверяем, что ответ отличается от нашего запроса и содержит ответ от сервера
-                                if "pong" in response_trimmed.lower() or "сервер" in response_trimmed.lower():
+                                if "pong" in response_trimmed.lower() or "server" in response_trimmed.lower():
                                     print(f"{response_trimmed}")
                                     response_received = True
                                 elif not response_trimmed.startswith(f"{client_number}:"):
