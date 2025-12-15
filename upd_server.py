@@ -132,7 +132,7 @@ def server(server_id=None):
                             os.ftruncate(fd, 0)
 
                             if message.lower() == "ping":
-                                response = f"The client №{client_num}: "pong" from the server {server_id}"
+                                response = f'The client №{client_num}: "pong" from the server {server_id}'
                                 #записываем ответ в файл
                                 os.lseek(fd, 0, os.SEEK_SET)
                                 os.write(fd, response.encode('utf-8'))
