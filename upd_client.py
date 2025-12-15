@@ -11,7 +11,7 @@ def client(server_id):
     
     if not os.path.exists(shared_file):
         print(f"The server with ID '{server_id}' is not running or the file is not found")
-        print("Start the server with the command: python server.py [server_id]")
+        print("Start the server with the command: python3 upd_server.py [server_id]")
         return 1
     
     #файл для хранения информации о клиентах
@@ -47,7 +47,7 @@ def client(server_id):
         
         print(f"\nConnecting to the server {server_id}")
         print(f"You are a client №{client_number}")
-        print("Enter a request or 'exit' to exit\n")
+        print("Enter a request or 'exit'\n")
         
     except Exception as e:
         print(f"Error when receiving the client's number: {e}")
@@ -196,7 +196,7 @@ def client(server_id):
                                 return 0
                             elif response == " ":
                                 #ответ от сервера на неверный запрос
-                                print(f"Error: Invalid request (the server did not recognize the command)")
+                                print(f"Error: invalid request")
                                 response_received = True
                             elif response_trimmed:
                                 #проверяем, что ответ и наш запрос это не одно и то же
@@ -292,8 +292,6 @@ def client(server_id):
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Using: python client.py <server_id>")
-        print("Example: python client.py server1")
         sys.exit(1)
     
     server_id = sys.argv[1]
