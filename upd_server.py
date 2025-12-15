@@ -80,11 +80,12 @@ def server(server_id=None):
             f.write("0")
     except:
         pass
-    
+
+    print("\n")
     print(f"The {server_id} server is running")
     print(f"The communication file: {shared_file}")
     print("To connect the client, use the command:")
-    print(f"python client.py {server_id}")
+    print(f"python3 upd_client.py {server_id}")
     print("To end the server, click Ctrl+C")
     print()
     
@@ -124,30 +125,30 @@ def server(server_id=None):
                             client_num = client_num.strip()
                             message = message.strip()
                             
-                            print(f"The server {server_id}: A message has been received from the client №{client_num}: {message}")
+                            print(f"The server {server_id}: message from the client №{client_num}: {message}")
                             
                             #очищаем файл
                             time.sleep(1)
                             os.ftruncate(fd, 0)
 
                             if message.lower() == "ping":
-                                response = f"The client №{client_num}: pong from the server {server_id}"
+                                response = f"The client №{client_num}: "pong" from the server {server_id}"
                                 #записываем ответ в файл
                                 os.lseek(fd, 0, os.SEEK_SET)
                                 os.write(fd, response.encode('utf-8'))
-                                print(f"The server {server_id}: A response has been sent to the client №{client_num}")
+                                print(f"The server {server_id}: "pong" sent to the client №{client_num}")
                                 
                                 #сбрасываем буферы на диск
                                 os.fsync(fd)                            
                             else:
                                 #выводим ошибку в терминал
-                                error_msg = f"The server {server_id}: The client №{client_num}: Error: Invalid request"
+                                error_msg = f"The server {server_id}: client №{client_num}: invalid request"
                                 print(error_msg)
                                 os.lseek(fd, 0, os.SEEK_SET)
                                 os.write(fd, b" ")
                                 os.fsync(fd)
                         else:                            
-                            print(f"The server {server_id}: Incorrect message received: {message_data}")
+                            print(f"The server {server_id}: invalid request: {message_data}")
                             os.lseek(fd, 0, os.SEEK_SET)
                             os.write(fd, b" ")
                             os.fsync(fd)
