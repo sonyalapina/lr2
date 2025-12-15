@@ -8,41 +8,41 @@ import uuid
 import signal
 
 def server(server_id=None):
-    # Генерируем уникальный ID сервера если его нет
+    #генерируем уникальный ID сервера если его нет
     if server_id is None:
         server_id = str(uuid.uuid4())[:8]
     
-    # Имя общего файла для общения с уникальным ID сервера
+    #имя общего файла для общения с уникальным ID сервера
     shared_file = f"/tmp/shared_communication_{server_id}.txt"
     
-    # Файл для хранения информации о клиентах
+    #файл для хранения информации о клиентах
     clients_file = f"/tmp/clients_info_{server_id}.txt"
     
-    # Флаг для корректного завершения
+    #флаг для корректного завершения
     is_shutting_down = False
     
-    # Функция для обработки сигналов завершения
+    #функция для обработки сигналов завершения
     def shutdown_handler(signum, frame):
         nonlocal is_shutting_down
         if not is_shutting_down:
             is_shutting_down = True
             print(f"\nThe server {server_id} is closing...")
             
-            # Оповещаем всех клиентов о завершении работы сервера
+            #оповещаем всех клиентов о завершении работы сервера
             try:
                 if os.path.exists(shared_file):
                     fd = os.open(shared_file, os.O_RDWR)
                     try:
-                        # Блокируем файл
+                        #блокируем файл
                         os.lockf(fd, os.F_LOCK, 0)
                         
-                        # Записываем сообщение о завершении сервера
+                        #записываем сообщение о завершении сервера
                         shutdown_msg = "SERVER_SHUTDOWN"
                         os.lseek(fd, 0, os.SEEK_SET)
                         os.write(fd, shutdown_msg.encode('utf-8'))
                         os.ftruncate(fd, len(shutdown_msg))
                         
-                        # Сбрасываем на диск
+                        #сбрасываем на диск
                         os.fsync(fd)
                         
                         os.lockf(fd, os.F_ULOCK, 0)
@@ -56,10 +56,10 @@ def server(server_id=None):
             except Exception as e:
                 print(f"Error when notifying clients: {e}")
             
-            # Даем время клиентам получить сообщение
+            #даем время клиентам получить сообщение
             time.sleep(1)
             
-            # Удаляем файлы
+            #удаляем файлы
             if os.path.exists(shared_file):
                 os.unlink(shared_file)
                 print(f"{shared_file} file deleted")
@@ -74,7 +74,7 @@ def server(server_id=None):
     signal.signal(signal.SIGINT, shutdown_handler)
     signal.signal(signal.SIGTERM, shutdown_handler)
     
-    # Создаем счетчик клиентов
+    #создаем счетчик клиентов
     try:
         with open(clients_file, 'w') as f:
             f.write("0")
@@ -89,7 +89,7 @@ def server(server_id=None):
     print()
     
     try:
-        # Создаем файл
+        #создаем файл
         with open(shared_file, 'w') as f:
             pass
         print(f"The {shared_file} file is ready")
@@ -101,24 +101,24 @@ def server(server_id=None):
                 fd = os.open(shared_file, os.O_RDWR)
                 
                 try:
-                    # Блокируем файл
+                    #блокируем файл
                     os.lockf(fd, os.F_LOCK, 0)
                     
-                    # Перемещаем указатель в начало
+                    #перемещаем указатель в начало
                     os.lseek(fd, 0, os.SEEK_SET)
                     
-                    # Читаем данные
+                    #читаем данные
                     data = os.read(fd, 1024)
                     
                     if data:
                         message_data = data.decode('utf-8').strip()
                         
-                        # Если клиент отправил сообщение о завершении
+                        #если клиент отправил сообщение о завершении
                         if message_data == "SERVER_SHUTDOWN":
                             os.lseek(fd, 0, os.SEEK_SET)
                             os.write(fd, b" ")
                             os.fsync(fd)
-                        # Разбираем сообщение: номер_клиента:сообщение
+                        #разбираем сообщение: номер_клиента:сообщение
                         elif ':' in message_data:
                             client_num, message = message_data.split(':', 1)
                             client_num = client_num.strip()
@@ -126,28 +126,27 @@ def server(server_id=None):
                             
                             print(f"The server {server_id}: A message has been received from the client №{client_num}: {message}")
                             
-                            # Очищаем файл
+                            #очищаем файл
                             time.sleep(1)
                             os.ftruncate(fd, 0)
 
                             if message.lower() == "ping":
                                 response = f"The client №{client_num}: pong from the server {server_id}"
-                                # Записываем ответ в файл
+                                #записываем ответ в файл
                                 os.lseek(fd, 0, os.SEEK_SET)
                                 os.write(fd, response.encode('utf-8'))
                                 print(f"The server {server_id}: A response has been sent to the client №{client_num}")
                                 
-                                # Сбрасываем буферы на диск
+                                #сбрасываем буферы на диск
                                 os.fsync(fd)                            
                             else:
-                                # Выводим ошибку в терминал
+                                #выводим ошибку в терминал
                                 error_msg = f"The server {server_id}: The client №{client_num}: Error: Invalid request"
                                 print(error_msg)
                                 os.lseek(fd, 0, os.SEEK_SET)
                                 os.write(fd, b" ")
                                 os.fsync(fd)
-                        else:
-                            # Если формат неверный
+                        else:                            
                             print(f"The server {server_id}: Incorrect message received: {message_data}")
                             os.lseek(fd, 0, os.SEEK_SET)
                             os.write(fd, b" ")
@@ -158,7 +157,7 @@ def server(server_id=None):
                     os.lockf(fd, os.F_ULOCK, 0)
                     
                 except Exception as e:
-                    # При ошибке снимаем блокировку
+                    #при ошибке снимаем блокировку
                     try:
                         os.lockf(fd, os.F_ULOCK, 0)
                     except:
@@ -182,6 +181,6 @@ def server(server_id=None):
     return 0
 
 if __name__ == "__main__":
-    # Указываем ID сервера как аргумент командной строки
+    #указываем ID сервера как аргумент командной строки
     server_id = sys.argv[1] if len(sys.argv) > 1 else None
     sys.exit(server(server_id))
