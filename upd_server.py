@@ -136,7 +136,7 @@ def server(server_id=None):
                                 #записываем ответ в файл
                                 os.lseek(fd, 0, os.SEEK_SET)
                                 os.write(fd, response.encode('utf-8'))
-                                print(f"The server {server_id}: "pong" sent to the client №{client_num}")
+                                print(f'The server {server_id}: "pong" sent to the client №{client_num}')
                                 
                                 #сбрасываем буферы на диск
                                 os.fsync(fd)                            
