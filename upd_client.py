@@ -6,7 +6,7 @@ import errno
 import threading
 
 def client(server_id):
-    # Используем тот же файл, что и сервер
+    #используем тот же файл что и сервер
     shared_file = f"/tmp/shared_communication_{server_id}.txt"
     
     if not os.path.exists(shared_file):
@@ -14,19 +14,19 @@ def client(server_id):
         print("Start the server with the command: python server.py [server_id]")
         return 1
     
-    # Файл для хранения информации о клиентах
+    #файл для хранения информации о клиентах
     clients_file = f"/tmp/clients_info_{server_id}.txt"
     client_number = None
     
-    # Флаг для завершения работы
+    #флаг для завершения работы
     shutdown_event = threading.Event()
     
-    # Получаем номер клиента
+    #получаем номер клиента
     try:
         fd = os.open(clients_file, os.O_RDWR | os.O_CREAT)
         os.lockf(fd, os.F_LOCK, 0)
         
-        # Читаем текущее количество клиентов
+        #читаем текущее кол-во клиентов
         try:
             data = os.read(fd, 1024)
             if data:
@@ -36,10 +36,7 @@ def client(server_id):
         except:
             current_clients = 0
         
-        # Увеличиваем счетчик и получаем номер клиента
         client_number = current_clients + 1
-        
-        # Записываем обновленное количество
         os.lseek(fd, 0, os.SEEK_SET)
         os.write(fd, str(client_number).encode('utf-8'))
         os.ftruncate(fd, len(str(client_number)))
@@ -56,7 +53,7 @@ def client(server_id):
         print(f"Error when receiving the client's number: {e}")
         return 1
     
-    # Функция для фонового мониторинга сервера
+    #фоновый мониторинг сервера
     def monitor_server():
         last_check = 0
         check_interval = 0.5
@@ -66,14 +63,14 @@ def client(server_id):
             if current_time - last_check >= check_interval:
                 last_check = current_time
                 
-                # Проверяем наличие файлов сервера
+                #проверяем наличие файлов сервера
                 if not os.path.exists(shared_file) or not os.path.exists(clients_file):
                     shutdown_event.set()
                     print(f"\nThe server is disabled")
                     os._exit(0)
                     return
                 
-                # Проверяем на наличие сообщения о завершении сервера
+                #проверяем есть ли сообщения о завершении сервера
                 try:
                     if os.path.exists(shared_file):
                         fd = os.open(shared_file, os.O_RDWR)
@@ -103,7 +100,7 @@ def client(server_id):
             
             time.sleep(0.1)
     
-    # Запускаем фоновый мониторинг
+    #фоновый мониторинг
     monitor_thread = threading.Thread(target=monitor_server, daemon=True)
     monitor_thread.start()
     
@@ -129,7 +126,7 @@ def client(server_id):
             if user_input.lower() == "exit":
                 print(f"Client №{client_number} is closing...")
                 
-                # Уменьшаем счетчик клиентов при выходе
+                #уменьшаем счетчик клиентов при выходе
                 try:
                     fd = os.open(clients_file, os.O_RDWR)
                     os.lockf(fd, os.F_LOCK, 0)
@@ -160,19 +157,19 @@ def client(server_id):
                     os._exit(0)
                     return 0
                 
-                # Открываем файл для записи с блокировкой
+                #открываем файл для записи с блокировкой
                 fd = os.open(shared_file, os.O_RDWR)
                 os.lockf(fd, os.F_LOCK, 0)
                 
-                # Записываем запрос в файл с номером клиента
+                #записываем запрос в файл с номером клиента
                 request_data = f"{client_number}:{user_input}"
                 os.lseek(fd, 0, os.SEEK_SET)
                 os.write(fd, request_data.encode('utf-8'))
                 
-                # Сбрасываем на диск(синхронизируем)
+                #сбрасываем на диск(синхронизируем)
                 os.fsync(fd)
                 
-                # Снимаем блокировку
+                #снимаем блокировку
                 os.lockf(fd, os.F_ULOCK, 0)
                 os.close(fd)
                 
@@ -181,14 +178,9 @@ def client(server_id):
                 start_time = time.time()
                 
                 while not response_received and not shutdown_event.is_set() and (time.time() - start_time) < timeout:
-                    try:
-                        # Открываем для чтения
-                        fd = os.open(shared_file, os.O_RDWR)
-                        
-                        # Блокируем для чтения
+                    try:                        
+                        fd = os.open(shared_file, os.O_RDWR)                       
                         os.lockf(fd, os.F_LOCK, 0)
-                        
-                        # Читаем ответ
                         os.lseek(fd, 0, os.SEEK_SET)
                         data = os.read(fd, 1024)
                         
@@ -196,27 +188,26 @@ def client(server_id):
                             response = data.decode('utf-8')
                             response_trimmed = response.strip()
                             
-                            # Проверяем, не пришло ли сообщение о завершении сервера
+                            #проверяем не пришло ли сообщение о завершении сервера
                             if response_trimmed == "SERVER_SHUTDOWN":
                                 shutdown_event.set()
                                 print(f"\nThe server is disabled")
                                 os._exit(0)
                                 return 0
                             elif response == " ":
-                                # Это специальный ответ от сервера на неверный запрос
+                                #ответ от сервера на неверный запрос
                                 print(f"Error: Invalid request (the server did not recognize the command)")
                                 response_received = True
                             elif response_trimmed:
-                                # Проверяем, что ответ отличается от нашего запроса и содержит ответ от сервера
+                                #проверяем, что ответ и наш запрос это не одно и то же
                                 if "pong" in response_trimmed.lower() or "server" in response_trimmed.lower():
                                     print(f"{response_trimmed}")
                                     response_received = True
                                 elif not response_trimmed.startswith(f"{client_number}:"):
-                                    # Любой другой ответ, который не начинается с нашего номера
                                     print(f"{response_trimmed}")
                                     response_received = True
                             
-                            # Очищаем файл, если получили ответ
+                            #очищаем файл если получили ответ
                             if response_received:
                                 os.ftruncate(fd, 0)
 
@@ -224,7 +215,7 @@ def client(server_id):
                         os.close(fd)
                    
                     except Exception as e:
-                        # Если файл не найден, значит сервер завершил работу
+                        #если файл не найден значит сервер завершил работу
                         if isinstance(e, FileNotFoundError):
                             shutdown_event.set()
                             print(f"\nThe server is disabled")
@@ -273,7 +264,7 @@ def client(server_id):
         print(f"\nClient №{client_number} is closing...")
         shutdown_event.set()
         
-        # Уменьшаем счетчик клиентов при прерывании
+        #уменьшаем счетчик клиентов при прерывании
         try:
             fd = os.open(clients_file, os.O_RDWR)
             os.lockf(fd, os.F_LOCK, 0)
@@ -293,8 +284,7 @@ def client(server_id):
             pass
         
         os._exit(0)
-    
-    # Даем время мониторинговому потоку завершиться
+
     shutdown_event.set()
     time.sleep(0.5)
     
