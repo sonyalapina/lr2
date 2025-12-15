@@ -10,7 +10,7 @@ import signal
 def server(server_id=None):
     #генерируем уникальный ID сервера если его нет
     if server_id is None:
-        server_id = str(uuid.uuid4())[:8]
+        server_id = str(uuid.uuid4())[:4]
     
     #имя общего файла для общения с уникальным ID сервера
     shared_file = f"/tmp/shared_communication_{server_id}.txt"
