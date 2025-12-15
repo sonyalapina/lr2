@@ -122,11 +122,11 @@ def client(server_id):
                 print(f"\nThe server is disabled")
                 os._exit(0)
                 return 0
-            
-            if user_input.lower() == "exit":
-                print(f"Client №{client_number} is closing...")
+
             if user_input.lower() == "SERVER_SHUTDOWN":
                 print("Don't play with fire")
+            if user_input.lower() == "exit":
+                print(f"Client №{client_number} is closing...")            
                 
                 #уменьшаем счетчик клиентов при выходе
                 try:
